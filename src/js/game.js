@@ -17,7 +17,6 @@ const GHOST_SPEED = 0.1;    // 1/10 celda/frame
 // dots sin destruir el original, y reiniciar.
 function createGame() {
   const grid = MAZE.map( ( row ) => row.slice() );
-  // La celda de inicio de Pacman arranca sin dot.
   grid[ PACMAN_START.y ][ PACMAN_START.x ] = 0;
 
   let dots = 0;
@@ -36,12 +35,14 @@ function createGame() {
       nextDir: null,
       speed: PACMAN_SPEED,
     },
-    ghosts: GHOST_STARTS.map( ( g ) => ( {
+    ghosts: GHOST_STARTS.map( ( g, i ) => ( {
       x: g.x,
       y: g.y,
       dir: 'up',
       speed: GHOST_SPEED,
       kind: g.kind,
+      penState: 'waiting',
+      penTimer: i * GHOST_EXIT_INTERVAL,
     } ) ),
   };
 }
@@ -117,33 +118,96 @@ function decideGhost( game, g ) {
   const options = Object.keys( DIRS ).filter(
     ( dir ) => dir !== OPPOSITE[ g.dir ] && canMove( grid, g.x, g.y, dir, 'ghost' )
   );
-  // Sin salida (callejon): permitir el giro de 180.
   const choices = options.length ? options : [ '' + OPPOSITE[ g.dir ] ];
 
-  if ( g.kind === 'hunter' ) {
-    const px = Math.round( p.x );
-    const py = Math.round( p.y );
-    let best = choices[ 0 ];
-    let bestDist = Infinity;
-    for ( const dir of choices ) {
-      const d = DIRS[ dir ];
-      const nx = g.x + d.x;
-      const ny = g.y + d.y;
-      const dist = Math.abs( nx - px ) + Math.abs( ny - py );
-      if ( dist < bestDist ) {
-        bestDist = dist;
-        best = dir;
-      }
+  let target;
+  switch ( g.kind ) {
+    case 'blinky':
+      target = { x: Math.round( p.x ), y: Math.round( p.y ) };
+      break;
+    case 'pinky': {
+      const px = Math.round( p.x );
+      const py = Math.round( p.y );
+      const pd = DIRS[ p.dir ];
+      target = { x: px + 4 * pd.x, y: py + 4 * pd.y };
+      if ( p.dir === 'up' ) target.x -= 4;
+      break;
     }
-    g.dir = best;
-  } else {
-    g.dir = choices[ Math.floor( Math.random() * choices.length ) ];
+    case 'inky': {
+      const px = Math.round( p.x );
+      const py = Math.round( p.y );
+      const pd = DIRS[ p.dir ];
+      const blinky = game.ghosts[ 0 ];
+      const ahead = { x: px + 2 * pd.x, y: py + 2 * pd.y };
+      const vec = { x: ahead.x - blinky.x, y: ahead.y - blinky.y };
+      target = { x: ahead.x + vec.x, y: ahead.y + vec.y };
+      break;
+    }
+    case 'clyde': {
+      const px = Math.round( p.x );
+      const py = Math.round( p.y );
+      const d = Math.abs( px - g.x ) + Math.abs( py - g.y );
+      if ( d > 8 ) {
+        target = { x: px, y: py };
+      } else {
+        target = { x: 0, y: grid.length - 1 };
+      }
+      break;
+    }
+    default:
+      target = { x: Math.round( p.x ), y: Math.round( p.y ) };
   }
+
+  const DIR_PRIORITY = [ 'up', 'left', 'down', 'right' ];
+  let best = choices[ 0 ];
+  let bestDist = Infinity;
+  for ( const dir of DIR_PRIORITY ) {
+    if ( !choices.includes( dir ) ) continue;
+    const d = DIRS[ dir ];
+    const nx = g.x + d.x;
+    const ny = g.y + d.y;
+    const dist = Math.abs( nx - target.x ) + Math.abs( ny - target.y );
+    if ( dist < bestDist ) {
+      bestDist = dist;
+      best = dir;
+    }
+  }
+  g.dir = best;
 }
 
 function moveGhost( game, g ) {
   const grid = game.grid;
   const width = grid[ 0 ].length;
+
+  if ( g.penState === 'waiting' ) {
+    if ( g.penTimer > 0 ) {
+      g.penTimer -= 1 / 60;
+      return;
+    }
+    g.penState = 'exiting';
+    g.dir = 'up';
+  }
+
+  if ( g.penState === 'exiting' ) {
+    if ( aligned( g.x ) && aligned( g.y ) ) {
+      g.x = Math.round( g.x );
+      g.y = Math.round( g.y );
+      if ( g.y === 12 ) {
+        g.penState = 'active';
+      } else {
+        g.dir = 'up';
+      }
+      if ( g.penState === 'exiting' ) {
+        if ( !canMove( grid, g.x, g.y, g.dir, 'ghost' ) ) return;
+      }
+    }
+    if ( g.penState === 'exiting' ) {
+      const d = DIRS[ g.dir ];
+      g.x += d.x * g.speed;
+      g.y += d.y * g.speed;
+      return;
+    }
+  }
 
   if ( aligned( g.x ) && aligned( g.y ) ) {
     g.x = Math.round( g.x );
@@ -168,6 +232,8 @@ function resetPositions( game ) {
     g.x = GHOST_STARTS[ i ].x;
     g.y = GHOST_STARTS[ i ].y;
     g.dir = 'up';
+    g.penState = 'waiting';
+    g.penTimer = i * GHOST_EXIT_INTERVAL;
   } );
 }
 

@@ -41,12 +41,16 @@ if ( actionBtn ) actionBtn.addEventListener( 'click', startGame );
 
 function loop() {
   frame++;
-  if ( game.state === 'playing' ) {
-    update( game );
-    if ( game.state === 'won' ) showOverlay( 'GANASTE', 'win', 'Reiniciar' );
-    else if ( game.state === 'lost' ) showOverlay( 'PERDISTE', 'lose', 'Reiniciar' );
+  try {
+    if ( game.state === 'playing' ) {
+      update( game );
+      if ( game.state === 'won' ) showOverlay( 'GANASTE', 'win', 'Reiniciar' );
+      else if ( game.state === 'lost' ) showOverlay( 'PERDISTE', 'lose', 'Reiniciar' );
+    }
+    draw( ctx, game, frame );
+  } catch ( e ) {
+    console.error( 'Error en loop:', e );
   }
-  draw( ctx, game, frame );
   requestAnimationFrame( loop );
 }
 

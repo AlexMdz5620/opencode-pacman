@@ -51,12 +51,34 @@ const MAZE = MAZE_STR.map( ( row ) => row.split( '' ).map( parseTile ) );
 
 const TUNNEL_ROW = 14;
 const PACMAN_START = { x: 13, y: 23 };
+
+const GHOST_COLORS = {
+  blinky: '#FF0000',
+  pinky: '#FFB8FF',
+  inky: '#00FFFF',
+  clyde: '#FFB852',
+};
+
+const GHOST_NAMES = {
+  blinky: 'Shadow',
+  pinky: 'Speedy',
+  inky: 'Bashful',
+  clyde: 'Pokey',
+};
+
 const GHOST_STARTS = [
-  { x: 13, y: 14, kind: 'hunter' }, // dentro de la pen
-  { x: 14, y: 14, kind: 'random' }, // dentro de la pen
+  { x: 13, y: 14, kind: 'blinky' },
+  { x: 14, y: 14, kind: 'pinky' },
+  { x: 13, y: 15, kind: 'inky' },
+  { x: 14, y: 15, kind: 'clyde' },
 ];
+
+const GHOST_EXIT_INTERVAL = 1.5;
 
 window.MAZE = MAZE;
 window.TUNNEL_ROW = TUNNEL_ROW;
 window.PACMAN_START = PACMAN_START;
 window.GHOST_STARTS = GHOST_STARTS;
+window.GHOST_COLORS = GHOST_COLORS;
+window.GHOST_NAMES = GHOST_NAMES;
+window.GHOST_EXIT_INTERVAL = GHOST_EXIT_INTERVAL;
