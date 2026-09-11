@@ -1,6 +1,6 @@
 # SPEC 01 — Comportamientos de los 4 fantasmas originales
 
-> **Status:** Approved
+> **Status:** Implementado
 > **Depends on:** Ninguno
 > **Date:** 2026-09-11
 > **Objective:** Implementar los 4 fantasmas originales de Pac-Man (Blinky, Pinky, Inky, Clyde) con sus comportamientos de persecución fielmente replicados del juego arcade de 1980.
