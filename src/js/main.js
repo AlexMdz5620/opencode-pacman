@@ -35,7 +35,6 @@ function startGame() {
   game = createGame();
   game.state = 'playing';
   overlay.classList.remove( 'show' );
-  console.log( 'Juego iniciado, state:', game.state, 'ghosts:', game.ghosts.length );
 }
 
 if ( actionBtn ) actionBtn.addEventListener( 'click', startGame );

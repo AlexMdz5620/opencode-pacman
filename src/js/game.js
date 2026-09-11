@@ -197,9 +197,11 @@ function moveGhost( game, g ) {
       } else {
         g.dir = 'up';
       }
+      if ( g.penState === 'exiting' ) {
+        if ( !canMove( grid, g.x, g.y, g.dir, 'ghost' ) ) return;
+      }
     }
     if ( g.penState === 'exiting' ) {
-      if ( !canMove( grid, g.x, g.y, g.dir, 'ghost' ) ) return;
       const d = DIRS[ g.dir ];
       g.x += d.x * g.speed;
       g.y += d.y * g.speed;
