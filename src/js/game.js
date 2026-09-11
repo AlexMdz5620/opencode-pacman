@@ -118,10 +118,9 @@ function decideGhost( game, g ) {
   const options = Object.keys( DIRS ).filter(
     ( dir ) => dir !== OPPOSITE[ g.dir ] && canMove( grid, g.x, g.y, dir, 'ghost' )
   );
-  // Sin salida (callejon): permitir el giro de 180.
   const choices = options.length ? options : [ '' + OPPOSITE[ g.dir ] ];
 
-  if ( g.kind === 'hunter' ) {
+  if ( g.kind === 'blinky' ) {
     const px = Math.round( p.x );
     const py = Math.round( p.y );
     let best = choices[ 0 ];
