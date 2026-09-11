@@ -120,25 +120,57 @@ function decideGhost( game, g ) {
   );
   const choices = options.length ? options : [ '' + OPPOSITE[ g.dir ] ];
 
-  if ( g.kind === 'blinky' ) {
-    const px = Math.round( p.x );
-    const py = Math.round( p.y );
-    let best = choices[ 0 ];
-    let bestDist = Infinity;
-    for ( const dir of choices ) {
-      const d = DIRS[ dir ];
-      const nx = g.x + d.x;
-      const ny = g.y + d.y;
-      const dist = Math.abs( nx - px ) + Math.abs( ny - py );
-      if ( dist < bestDist ) {
-        bestDist = dist;
-        best = dir;
-      }
+  let target;
+  switch ( g.kind ) {
+    case 'blinky':
+      target = { x: Math.round( p.x ), y: Math.round( p.y ) };
+      break;
+    case 'pinky': {
+      const px = Math.round( p.x );
+      const py = Math.round( p.y );
+      const pd = DIRS[ p.dir ];
+      target = { x: px + 4 * pd.x, y: py + 4 * pd.y };
+      if ( p.dir === 'up' ) target.x -= 4;
+      break;
     }
-    g.dir = best;
-  } else {
-    g.dir = choices[ Math.floor( Math.random() * choices.length ) ];
+    case 'inky': {
+      const px = Math.round( p.x );
+      const py = Math.round( p.y );
+      const pd = DIRS[ p.dir ];
+      const blinky = game.ghosts[ 0 ];
+      const ahead = { x: px + 2 * pd.x, y: py + 2 * pd.y };
+      const vec = { x: ahead.x - blinky.x, y: ahead.y - blinky.y };
+      target = { x: ahead.x + vec.x, y: ahead.y + vec.y };
+      break;
+    }
+    case 'clyde': {
+      const px = Math.round( p.x );
+      const py = Math.round( p.y );
+      const d = Math.abs( px - g.x ) + Math.abs( py - g.y );
+      if ( d > 8 ) {
+        target = { x: px, y: py };
+      } else {
+        target = { x: 0, y: grid.length - 1 };
+      }
+      break;
+    }
+    default:
+      target = { x: Math.round( p.x ), y: Math.round( p.y ) };
   }
+
+  let best = choices[ 0 ];
+  let bestDist = Infinity;
+  for ( const dir of choices ) {
+    const d = DIRS[ dir ];
+    const nx = g.x + d.x;
+    const ny = g.y + d.y;
+    const dist = Math.abs( nx - target.x ) + Math.abs( ny - target.y );
+    if ( dist < bestDist ) {
+      bestDist = dist;
+      best = dir;
+    }
+  }
+  g.dir = best;
 }
 
 function moveGhost( game, g ) {
