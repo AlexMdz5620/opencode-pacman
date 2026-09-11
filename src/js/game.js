@@ -17,7 +17,6 @@ const GHOST_SPEED = 0.1;    // 1/10 celda/frame
 // dots sin destruir el original, y reiniciar.
 function createGame() {
   const grid = MAZE.map( ( row ) => row.slice() );
-  // La celda de inicio de Pacman arranca sin dot.
   grid[ PACMAN_START.y ][ PACMAN_START.x ] = 0;
 
   let dots = 0;
@@ -36,12 +35,14 @@ function createGame() {
       nextDir: null,
       speed: PACMAN_SPEED,
     },
-    ghosts: GHOST_STARTS.map( ( g ) => ( {
+    ghosts: GHOST_STARTS.map( ( g, i ) => ( {
       x: g.x,
       y: g.y,
       dir: 'up',
       speed: GHOST_SPEED,
       kind: g.kind,
+      penState: 'waiting',
+      penTimer: i * GHOST_EXIT_INTERVAL,
     } ) ),
   };
 }
@@ -145,6 +146,34 @@ function moveGhost( game, g ) {
   const grid = game.grid;
   const width = grid[ 0 ].length;
 
+  if ( g.penState === 'waiting' ) {
+    if ( g.penTimer > 0 ) {
+      g.penTimer -= 1 / 60;
+      return;
+    }
+    g.penState = 'exiting';
+    g.dir = 'up';
+  }
+
+  if ( g.penState === 'exiting' ) {
+    if ( aligned( g.x ) && aligned( g.y ) ) {
+      g.x = Math.round( g.x );
+      g.y = Math.round( g.y );
+      if ( g.y === 12 ) {
+        g.penState = 'active';
+      } else {
+        g.dir = 'up';
+      }
+    }
+    if ( g.penState === 'exiting' ) {
+      if ( !canMove( grid, g.x, g.y, g.dir, 'ghost' ) ) return;
+      const d = DIRS[ g.dir ];
+      g.x += d.x * g.speed;
+      g.y += d.y * g.speed;
+      return;
+    }
+  }
+
   if ( aligned( g.x ) && aligned( g.y ) ) {
     g.x = Math.round( g.x );
     g.y = Math.round( g.y );
@@ -168,6 +197,8 @@ function resetPositions( game ) {
     g.x = GHOST_STARTS[ i ].x;
     g.y = GHOST_STARTS[ i ].y;
     g.dir = 'up';
+    g.penState = 'waiting';
+    g.penTimer = i * GHOST_EXIT_INTERVAL;
   } );
 }
 
