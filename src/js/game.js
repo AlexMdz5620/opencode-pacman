@@ -158,9 +158,11 @@ function decideGhost( game, g ) {
       target = { x: Math.round( p.x ), y: Math.round( p.y ) };
   }
 
+  const DIR_PRIORITY = [ 'up', 'left', 'down', 'right' ];
   let best = choices[ 0 ];
   let bestDist = Infinity;
-  for ( const dir of choices ) {
+  for ( const dir of DIR_PRIORITY ) {
+    if ( !choices.includes( dir ) ) continue;
     const d = DIRS[ dir ];
     const nx = g.x + d.x;
     const ny = g.y + d.y;
