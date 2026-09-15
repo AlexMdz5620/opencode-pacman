@@ -1,6 +1,6 @@
 # SPEC 03 — Power Pellets y modo frightened
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 01
 > **Date:** 2026-09-15
 > **Objective:** Implementar Power Pellets que activan el modo frightened (fantasmas azules comestibles) por 7 segundos, con sistema de puntuación progresivo y modo eyes para fantasmas comidos.
