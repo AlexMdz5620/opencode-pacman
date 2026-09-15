@@ -42,7 +42,7 @@ function createGame() {
       speed: GHOST_SPEED,
       kind: g.kind,
       penState: 'waiting',
-      penTimer: i * GHOST_EXIT_INTERVAL,
+      penTimer: GHOST_EXIT_TIMES[ i ],
     } ) ),
   };
 }
@@ -52,14 +52,18 @@ function aligned( v ) {
 }
 
 // Una celda es muro para el actor dado?
-//   pacman: bloqueado por pared (1) y puerta (3)
-//   ghost:  bloqueado solo por pared (1)
+//   pacman:  bloqueado por pared (1) y puerta (3)
+//   ghost:   bloqueado por pared (1); puerta (3) bloquea solo si penState === 'active'
 function isWall( grid, x, y, actor ) {
   if ( y < 0 || y >= grid.length ) return true;
   if ( x < 0 || x >= grid[ 0 ].length ) return true;
   const v = grid[ y ][ x ];
   if ( v === 1 ) return true;
-  if ( v === 3 && actor === 'pacman' ) return true;
+  if ( v === 3 ) {
+    if ( actor === 'pacman' ) return true;
+    if ( actor.penState === 'active' ) return true;
+    return false;
+  }
   return false;
 }
 
@@ -116,7 +120,7 @@ function decideGhost( game, g ) {
   const p = game.pacman;
 
   const options = Object.keys( DIRS ).filter(
-    ( dir ) => dir !== OPPOSITE[ g.dir ] && canMove( grid, g.x, g.y, dir, 'ghost' )
+    ( dir ) => dir !== OPPOSITE[ g.dir ] && canMove( grid, g.x, g.y, dir, g )
   );
   const choices = options.length ? options : [ '' + OPPOSITE[ g.dir ] ];
 
@@ -182,6 +186,13 @@ function moveGhost( game, g ) {
   if ( g.penState === 'waiting' ) {
     if ( g.penTimer > 0 ) {
       g.penTimer -= 1 / 60;
+      const d = DIRS[ g.dir ];
+      const ny = g.y + d.y * g.speed;
+      if ( ny < 14 || ny > 15 ) {
+        g.dir = g.dir === 'up' ? 'down' : 'up';
+      } else {
+        g.y = ny;
+      }
       return;
     }
     g.penState = 'exiting';
@@ -192,13 +203,13 @@ function moveGhost( game, g ) {
     if ( aligned( g.x ) && aligned( g.y ) ) {
       g.x = Math.round( g.x );
       g.y = Math.round( g.y );
-      if ( g.y === 12 ) {
+      if ( g.y < 12 ) {
         g.penState = 'active';
       } else {
         g.dir = 'up';
       }
       if ( g.penState === 'exiting' ) {
-        if ( !canMove( grid, g.x, g.y, g.dir, 'ghost' ) ) return;
+        if ( !canMove( grid, g.x, g.y, g.dir, g ) ) return;
       }
     }
     if ( g.penState === 'exiting' ) {
@@ -213,7 +224,7 @@ function moveGhost( game, g ) {
     g.x = Math.round( g.x );
     g.y = Math.round( g.y );
     decideGhost( game, g );
-    if ( !canMove( grid, g.x, g.y, g.dir, 'ghost' ) ) return;
+    if ( !canMove( grid, g.x, g.y, g.dir, g ) ) return;
   }
 
   const d = DIRS[ g.dir ];
@@ -233,7 +244,7 @@ function resetPositions( game ) {
     g.y = GHOST_STARTS[ i ].y;
     g.dir = 'up';
     g.penState = 'waiting';
-    g.penTimer = i * GHOST_EXIT_INTERVAL;
+    g.penTimer = GHOST_EXIT_TIMES[ i ];
   } );
 }
 
