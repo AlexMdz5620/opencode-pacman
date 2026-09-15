@@ -79,6 +79,20 @@ function drawDots( ctx, grid ) {
   }
 }
 
+function drawPowerPellets( ctx, grid, frame ) {
+  ctx.fillStyle = '#fff';
+  for ( let y = 0; y < grid.length; y++ ) {
+    for ( let x = 0; x < grid[ 0 ].length; x++ ) {
+      if ( grid[ y ][ x ] !== 4 ) continue;
+      const { cx, cy } = cellCenter( x, y );
+      const pulse = Math.sin( frame * 0.15 ) * 1.5 + 5;
+      ctx.beginPath();
+      ctx.arc( cx, cy, pulse, 0, Math.PI * 2 );
+      ctx.fill();
+    }
+  }
+}
+
 function drawPacman( ctx, p, frame ) {
   const { cx, cy } = cellCenter( p.x, p.y );
   let rot = 0;
@@ -155,6 +169,7 @@ function draw( ctx, game, frame ) {
   drawWalls( ctx, grid );
   drawDoor( ctx, grid );
   drawDots( ctx, grid );
+  drawPowerPellets( ctx, grid, frame );
   drawPacman( ctx, game.pacman, frame );
   game.ghosts.forEach( ( g ) => drawGhost( ctx, g, GHOST_COLORS[ g.kind ] || '#ff0000' ) );
   drawHUD( ctx, game, W );

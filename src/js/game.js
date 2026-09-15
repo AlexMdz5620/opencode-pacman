@@ -20,13 +20,20 @@ function createGame() {
   grid[ PACMAN_START.y ][ PACMAN_START.x ] = 0;
 
   let dots = 0;
-  for ( const row of grid ) for ( const v of row ) if ( v === 2 ) dots++;
+  const powerPellets = [];
+  for ( let y = 0; y < grid.length; y++ ) {
+    for ( let x = 0; x < grid[ 0 ].length; x++ ) {
+      if ( grid[ y ][ x ] === 2 ) dots++;
+      if ( grid[ y ][ x ] === 4 ) powerPellets.push( { x, y } );
+    }
+  }
 
   return {
     state: 'start',
     score: 0,
     lives: 3,
     dotsRemaining: dots,
+    powerPellets,
     grid,
     pacman: {
       x: PACMAN_START.x,
@@ -104,6 +111,14 @@ function movePacman( game ) {
       grid[ p.y ][ p.x ] = 0;
       game.score += 10;
       game.dotsRemaining--;
+    }
+    // Comer power pellet.
+    if ( grid[ p.y ][ p.x ] === 4 ) {
+      grid[ p.y ][ p.x ] = 0;
+      game.score += 50;
+      game.powerPellets = game.powerPellets.filter(
+        ( pp ) => !( pp.x === p.x && pp.y === p.y )
+      );
     }
     // Si no puede seguir, se detiene en la celda.
     if ( !canMove( grid, p.x, p.y, p.dir, 'pacman' ) ) return;

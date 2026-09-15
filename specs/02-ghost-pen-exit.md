@@ -1,6 +1,6 @@
 # SPEC 02 — Corrección de salida del pen y tiempos de fantasmas
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 01
 > **Date:** 2026-09-11
 > **Objective:** Corregir la salida del pen para que los fantasmas realmente salgan (actualmente se atoran en la puerta) y ajustar los tiempos de salida para replicar los intervalos originales del arcade.
@@ -67,10 +67,10 @@ No se introducen nuevas estructuras. Se modifica `GHOST_EXIT_INTERVAL` por el ar
 
 ## Risks
 
-| Risk | Mitigation |
-| --- | --- |
-| El rebote puede verse raro si las posiciones del pen son limitadas | Verificar que y=14 y y=15 son transitables dentro del pen |
-| Cambiar `GHOST_EXIT_INTERVAL` por array puede romper otras referencias | Buscar todas las referencias antes de cambiar |
+| Risk                                                                   | Mitigation                                                |
+| ---------------------------------------------------------------------- | --------------------------------------------------------- |
+| El rebote puede verse raro si las posiciones del pen son limitadas     | Verificar que y=14 y y=15 son transitables dentro del pen |
+| Cambiar `GHOST_EXIT_INTERVAL` por array puede romper otras referencias | Buscar todas las referencias antes de cambiar             |
 
 ## What is **not** in this spec
 
