@@ -13,6 +13,12 @@ const OPPOSITE = { left: 'right', right: 'left', up: 'down', down: 'up' };
 const PACMAN_SPEED = 0.125; // 1/8 celda/frame -> alinea cada 8 frames
 const GHOST_SPEED = 0.1;    // 1/10 celda/frame
 
+const FRIGHTENED_DURATION = 7;
+const FRIGHTENED_BLINK_START = 5;
+const GHOST_EAT_POINTS = [ 200, 400, 800, 1600 ];
+const EYES_SPEED_MULTIPLIER = 1.5;
+const GHOST_RESPAWN_DELAY = 0.5;
+
 // Crea una partida nueva. Copia MAZE (pristino) a game.grid para poder comer
 // dots sin destruir el original, y reiniciar.
 function createGame() {
@@ -20,13 +26,23 @@ function createGame() {
   grid[ PACMAN_START.y ][ PACMAN_START.x ] = 0;
 
   let dots = 0;
-  for ( const row of grid ) for ( const v of row ) if ( v === 2 ) dots++;
+  const powerPellets = [];
+  for ( let y = 0; y < grid.length; y++ ) {
+    for ( let x = 0; x < grid[ 0 ].length; x++ ) {
+      if ( grid[ y ][ x ] === 2 ) dots++;
+      if ( grid[ y ][ x ] === 4 ) powerPellets.push( { x, y } );
+    }
+  }
 
   return {
     state: 'start',
     score: 0,
     lives: 3,
     dotsRemaining: dots,
+    powerPellets,
+    ghostEatCombo: 0,
+    frightenedTimer: 0,
+    frightenedPhase: 'normal',
     grid,
     pacman: {
       x: PACMAN_START.x,
@@ -41,6 +57,7 @@ function createGame() {
       dir: 'up',
       speed: GHOST_SPEED,
       kind: g.kind,
+      state: 'chase',
       penState: 'waiting',
       penTimer: GHOST_EXIT_TIMES[ i ],
     } ) ),
@@ -105,6 +122,20 @@ function movePacman( game ) {
       game.score += 10;
       game.dotsRemaining--;
     }
+    // Comer power pellet.
+    if ( grid[ p.y ][ p.x ] === 4 ) {
+      grid[ p.y ][ p.x ] = 0;
+      game.score += 50;
+      game.powerPellets = game.powerPellets.filter(
+        ( pp ) => !( pp.x === p.x && pp.y === p.y )
+      );
+      game.frightenedTimer = FRIGHTENED_DURATION;
+      game.frightenedPhase = 'normal';
+      game.ghostEatCombo = 0;
+      game.ghosts.forEach( ( g ) => {
+        if ( g.penState === 'active' ) g.state = 'frightened';
+      } );
+    }
     // Si no puede seguir, se detiene en la celda.
     if ( !canMove( grid, p.x, p.y, p.dir, 'pacman' ) ) return;
   }
@@ -123,6 +154,12 @@ function decideGhost( game, g ) {
     ( dir ) => dir !== OPPOSITE[ g.dir ] && canMove( grid, g.x, g.y, dir, g )
   );
   const choices = options.length ? options : [ '' + OPPOSITE[ g.dir ] ];
+
+  // Fantasmas frightened se mueven aleatoriamente.
+  if ( g.state === 'frightened' ) {
+    g.dir = choices[ Math.floor( Math.random() * choices.length ) ];
+    return;
+  }
 
   let target;
   switch ( g.kind ) {
@@ -220,6 +257,52 @@ function moveGhost( game, g ) {
     }
   }
 
+  // Velocidad reducida para fantasmas frightened.
+  const speed = g.state === 'frightened' ? g.speed * 0.5
+    : g.state === 'eyes' ? g.speed * EYES_SPEED_MULTIPLIER
+    : g.speed;
+
+  // Ojos van directo al pen.
+  if ( g.state === 'eyes' ) {
+    if ( aligned( g.x ) && aligned( g.y ) ) {
+      g.x = Math.round( g.x );
+      g.y = Math.round( g.y );
+      // Llegó al pen.
+      if ( g.y >= 14 && g.y <= 15 && g.x >= 13 && g.x <= 14 ) {
+        g.state = 'chase';
+        g.penState = 'waiting';
+        g.penTimer = GHOST_RESPAWN_DELAY;
+        g.dir = 'up';
+        return;
+      }
+      // Elegir dirección hacia el pen (target: 13.5, 14.5).
+      const targetX = 13.5;
+      const targetY = 14.5;
+      const options = Object.keys( DIRS ).filter(
+        ( dir ) => dir !== OPPOSITE[ g.dir ] && canMove( grid, g.x, g.y, dir, g )
+      );
+      const choices = options.length ? options : [ OPPOSITE[ g.dir ] ];
+      let best = choices[ 0 ];
+      let bestDist = Infinity;
+      for ( const dir of choices ) {
+        const d = DIRS[ dir ];
+        const nx = g.x + d.x;
+        const ny = g.y + d.y;
+        const dist = Math.abs( nx - targetX ) + Math.abs( ny - targetY );
+        if ( dist < bestDist ) {
+          bestDist = dist;
+          best = dir;
+        }
+      }
+      g.dir = best;
+    }
+    const d = DIRS[ g.dir ];
+    g.x += d.x * speed;
+    g.y += d.y * speed;
+    wrapTunnel( g, width );
+    return;
+  }
+
   if ( aligned( g.x ) && aligned( g.y ) ) {
     g.x = Math.round( g.x );
     g.y = Math.round( g.y );
@@ -228,8 +311,8 @@ function moveGhost( game, g ) {
   }
 
   const d = DIRS[ g.dir ];
-  g.x += d.x * g.speed;
-  g.y += d.y * g.speed;
+  g.x += d.x * speed;
+  g.y += d.y * speed;
   wrapTunnel( g, width );
 }
 
@@ -253,19 +336,46 @@ function collides( a, b ) {
 }
 
 function update( game ) {
+  // Actualizar timer de frightened.
+  if ( game.frightenedTimer > 0 ) {
+    game.frightenedTimer -= 1 / 60;
+    if ( game.frightenedTimer <= 0 ) {
+      game.frightenedTimer = 0;
+      game.frightenedPhase = 'normal';
+      game.ghosts.forEach( ( g ) => {
+        if ( g.state === 'frightened' ) g.state = 'chase';
+      } );
+    } else if ( game.frightenedTimer <= FRIGHTENED_BLINK_START ) {
+      game.frightenedPhase = 'blinking';
+    }
+  }
+
   movePacman( game );
   game.ghosts.forEach( ( g ) => moveGhost( game, g ) );
 
+  // Colisiones.
   for ( const g of game.ghosts ) {
-    if ( collides( game.pacman, g ) ) {
-      game.lives--;
-      if ( game.lives <= 0 ) {
-        game.state = 'lost';
-        return;
-      }
-      resetPositions( game );
-      break;
+    if ( !collides( game.pacman, g ) ) continue;
+
+    // Ojos no matan.
+    if ( g.state === 'eyes' ) continue;
+
+    // Comer fantasma frightened.
+    if ( g.state === 'frightened' ) {
+      g.state = 'eyes';
+      game.score += GHOST_EAT_POINTS[ game.ghostEatCombo ] || 1600;
+      game.ghostEatCombo++;
+      continue;
     }
+
+    // Fantasma normal mata a PacMan.
+    game.lives--;
+    if ( game.lives <= 0 ) {
+      game.state = 'lost';
+      return;
+    }
+    resetPositions( game );
+    break;
   }
 
   if ( game.dotsRemaining <= 0 ) game.state = 'won';

@@ -7,7 +7,7 @@
 
 const MAZE_STR = [
   '############################', // 0  borde
-  '#............##............#', // 1
+  '#O...........##...........O#', // 1
   '#.####.#####.##.#####.####.#', // 2
   '#.####.#####.##.#####.####.#', // 3
   '#.####.#####.##.#####.####.#', // 4
@@ -35,7 +35,7 @@ const MAZE_STR = [
   '#......##....##....##......#', // 26
   '#.##########.##.##########.#', // 27
   '#.##########.##.##########.#', // 28
-  '#..........................#', // 29
+  '#O........................O#', // 29
   '############################', // 30  borde
 ];
 
@@ -43,6 +43,7 @@ function parseTile( ch ) {
   if ( ch === '#' ) return 1;
   if ( ch === '.' ) return 2;
   if ( ch === '-' ) return 3;
+  if ( ch === 'O' ) return 4; // power pellet
   return 0; // espacio = vacio transitable
 }
 
@@ -75,6 +76,13 @@ const GHOST_STARTS = [
 
 const GHOST_EXIT_TIMES = [ 0.5, 3, 6, 8.5 ];
 
+const POWER_PELLET_POSITIONS = [
+  { x: 1, y: 1 },
+  { x: 26, y: 1 },
+  { x: 1, y: 29 },
+  { x: 26, y: 29 },
+];
+
 window.MAZE = MAZE;
 window.TUNNEL_ROW = TUNNEL_ROW;
 window.PACMAN_START = PACMAN_START;
@@ -82,3 +90,4 @@ window.GHOST_STARTS = GHOST_STARTS;
 window.GHOST_COLORS = GHOST_COLORS;
 window.GHOST_NAMES = GHOST_NAMES;
 window.GHOST_EXIT_TIMES = GHOST_EXIT_TIMES;
+window.POWER_PELLET_POSITIONS = POWER_PELLET_POSITIONS;
