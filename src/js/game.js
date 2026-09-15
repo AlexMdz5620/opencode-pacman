@@ -34,6 +34,9 @@ function createGame() {
     lives: 3,
     dotsRemaining: dots,
     powerPellets,
+    ghostEatCombo: 0,
+    frightenedTimer: 0,
+    frightenedPhase: 'normal',
     grid,
     pacman: {
       x: PACMAN_START.x,
