@@ -182,6 +182,13 @@ function moveGhost( game, g ) {
   if ( g.penState === 'waiting' ) {
     if ( g.penTimer > 0 ) {
       g.penTimer -= 1 / 60;
+      const d = DIRS[ g.dir ];
+      const ny = g.y + d.y * g.speed;
+      if ( ny < 14 || ny > 15 ) {
+        g.dir = g.dir === 'up' ? 'down' : 'up';
+      } else {
+        g.y = ny;
+      }
       return;
     }
     g.penState = 'exiting';
