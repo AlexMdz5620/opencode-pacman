@@ -42,7 +42,7 @@ function createGame() {
       speed: GHOST_SPEED,
       kind: g.kind,
       penState: 'waiting',
-      penTimer: i * GHOST_EXIT_INTERVAL,
+      penTimer: GHOST_EXIT_TIMES[ i ],
     } ) ),
   };
 }
@@ -233,7 +233,7 @@ function resetPositions( game ) {
     g.y = GHOST_STARTS[ i ].y;
     g.dir = 'up';
     g.penState = 'waiting';
-    g.penTimer = i * GHOST_EXIT_INTERVAL;
+    g.penTimer = GHOST_EXIT_TIMES[ i ];
   } );
 }
 
