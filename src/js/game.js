@@ -192,7 +192,7 @@ function moveGhost( game, g ) {
     if ( aligned( g.x ) && aligned( g.y ) ) {
       g.x = Math.round( g.x );
       g.y = Math.round( g.y );
-      if ( g.y === 12 ) {
+      if ( g.y < 12 ) {
         g.penState = 'active';
       } else {
         g.dir = 'up';
